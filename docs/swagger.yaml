@@ -1,0 +1,9 @@
+basePath: /
+host: localhost:8080
+info:
+  contact: {}
+  description: Users Segments Managment App
+  title: Avito Test App
+  version: "1.0"
+paths: {}
+swagger: "2.0"
