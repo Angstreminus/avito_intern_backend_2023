@@ -5,24 +5,24 @@ import (
 	"database/sql"
 )
 
-func BeginTransaction(userSegmentsRep *UserSegmentRepository) error {
+func BeginTransaction(segmentsUserRep *SegmentsUserRepository) error {
 	ctx := context.Background()
-	transaction, err := userSegmentsRep.dbHandler.BeginTx(ctx, &sql.TxOptions{})
+	transaction, err := segmentsUserRep.dbHandler.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
 		return err
 	}
-	userSegmentsRep.transaction = transaction
+	segmentsUserRep.Transaction = transaction
 	return nil
 }
 
-func RollBackTransaction(UserSegmentRep *UserSegmentRepository) error {
-	transaction := UserSegmentRep.transaction
-	UserSegmentRep.transaction = nil
+func RollBackTransaction(segmentsUserRep *SegmentsUserRepository) error {
+	transaction := segmentsUserRep.Transaction
+	segmentsUserRep.Transaction = nil
 	return transaction.Rollback()
 }
 
-func CommitTransaction(UserSegmentRep *UserSegmentRepository) error {
-	transaction := UserSegmentRep.transaction
-	UserSegmentRep.transaction = nil
+func CommitTransaction(segmentsUserRep *SegmentsUserRepository) error {
+	transaction := segmentsUserRep.Transaction
+	segmentsUserRep.Transaction = nil
 	return transaction.Commit()
 }

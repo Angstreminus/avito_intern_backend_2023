@@ -16,7 +16,7 @@ type Config struct {
 	PGport     string
 }
 
-func InitConfig() *Config {
+func NewConfig() *Config {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading config file")

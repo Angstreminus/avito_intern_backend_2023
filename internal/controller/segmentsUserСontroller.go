@@ -15,13 +15,13 @@ type EditUserSegmentRequest struct {
 	RemoveSegments []string `json:"remove_segments,omitempty"`
 }
 
-type UserSegmentController struct {
-	UserSegmentService *service.UserSegmentService
+type SegmentsUserController struct {
+	UserSegmentService *service.SegmentsUserService
 }
 
-func NewUserSegmentController(usrSegmService *service.UserSegmentService) *UserSegmentController {
-	return &UserSegmentController{
-		UserSegmentService: usrSegmService,
+func NewUserSegmentController(segmUsrService *service.SegmentsUserService) *SegmentsUserController {
+	return &SegmentsUserController{
+		UserSegmentService: segmUsrService,
 	}
 }
 
@@ -37,15 +37,15 @@ func NewUserSegmentController(usrSegmService *service.UserSegmentService) *UserS
 // @Failure 500 {object} model.ResponseError
 // @Router /user_segments [post]
 
-func (uc UserSegmentController) CreateUserSegment(ctx *gin.Context) {
-	var userSegment model.UserSegments
+func (sc SegmentsUserController) CreateSegmentsUsers(ctx *gin.Context) {
+	var segmentsUsers model.SegmentsUsers
 
-	err := ctx.BindJSON(userSegment)
+	err := ctx.BindJSON(segmentsUsers)
 	if err != nil {
 		ctx.AbortWithError(http.StatusUnprocessableEntity, err)
 	}
 
-	resp, respErr := uc.UserSegmentService.CreateUserSegment(&userSegment)
+	resp, respErr := sc.UserSegmentService.CreateSegmentUser(&segmentsUsers)
 	if respErr != nil {
 		ctx.AbortWithStatusJSON(respErr.Status, respErr)
 		return
@@ -65,7 +65,7 @@ func (uc UserSegmentController) CreateUserSegment(ctx *gin.Context) {
 // @Failure 500 {object} model.ResponseError
 // @Router /user_segments [put]
 
-func (uc UserSegmentController) EditUserSegment(ctx *gin.Context) {
+func (sc SegmentsUserController) EditUserSegment(ctx *gin.Context) {
 	var req EditUserSegmentRequest
 
 	err := ctx.BindJSON(&req)
@@ -73,7 +73,7 @@ func (uc UserSegmentController) EditUserSegment(ctx *gin.Context) {
 		ctx.AbortWithError(http.StatusUnprocessableEntity, err)
 	}
 
-	respErr := uc.UserSegmentService.EditUserSegment(req.AddSegments, req.RemoveSegments, req.UserId)
+	respErr := sc.UserSegmentService.EditSegment(req.AddSegments, req.RemoveSegments, req.UserId)
 	if respErr != nil {
 		ctx.AbortWithStatusJSON(respErr.Status, respErr)
 		return
@@ -92,14 +92,14 @@ func (uc UserSegmentController) EditUserSegment(ctx *gin.Context) {
 // @Failure 500 {object} model.ResponseError
 // @Router /user_segments [get]
 
-func (uc UserSegmentController) GetSegmentsNamesByUserID(ctx *gin.Context) {
+func (sc SegmentsUserController) GetSegmentsNamesByUserID(ctx *gin.Context) {
 	stringParamId := ctx.Param("id")
 	userId, err := strconv.Atoi(stringParamId)
 	if err != nil {
 		ctx.AbortWithError(http.StatusUnprocessableEntity, err)
 	}
 
-	userActiveSegments, respErr := uc.UserSegmentService.GetSegmentNamesByUserId(userId)
+	userActiveSegments, respErr := sc.UserSegmentService.GetSegmentNamesByUserId(userId)
 	if respErr != nil {
 		ctx.AbortWithStatusJSON(respErr.Status, respErr)
 		return

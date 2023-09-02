@@ -13,8 +13,8 @@ import (
 // @BasePath /
 
 func main() {
-	config := config.InitConfig()
-	dbHandler := server.InitDatabase(config)
-	Server := server.InitHttpServer(config, dbHandler)
+	config := config.NewConfig()
+	dbHandler := server.NewDatabaseHandler(config)
+	Server := server.NewHttpServer(config, dbHandler)
 	Server.Start()
 }

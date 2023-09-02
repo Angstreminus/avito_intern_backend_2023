@@ -17,33 +17,29 @@ import (
 )
 
 type HttpServer struct {
-	config                 *config.Config
-	router                 *gin.Engine
-	segmentController      *controller.SegmentController
-	userSegmentsController *controller.UserSegmentController
+	config *config.Config
+	router *gin.Engine
 }
 
-func InitHttpServer(config *config.Config, dbhandler *sql.DB) *HttpServer {
+func NewHttpServer(config *config.Config, dbhandler *sql.DB) *HttpServer {
 
 	segmentRepository := repository.NewSegmentRepository(dbhandler)
-	userSegmentsRep := repository.NewUserSegmentRepository(dbhandler)
+	segmentsUserRep := repository.NewSegmentUserRepository(dbhandler)
 	segmentService := service.NewSegmentService(segmentRepository)
-	userSegmentsService := service.NewUserSegmentService(userSegmentsRep)
+	segmentsUserService := service.NewSegmentUserService(segmentsUserRep)
 	segmentController := controller.NewSegmentController(segmentService)
-	userSegmetsController := controller.NewUserSegmentController(userSegmentsService)
+	segmetsUserController := controller.NewUserSegmentController(segmentsUserService)
 	router := gin.Default()
 
 	router.POST("/segments", segmentController.CreateSegment)
 	router.DELETE("/segments/:id", segmentController.DeleteSegment)
-	router.POST("/user_segments", userSegmetsController.CreateUserSegment)
-	router.PUT("/user_segments/:id", userSegmetsController.EditUserSegment)
-	router.GET("/user_segments/:id", userSegmetsController.GetSegmentsNamesByUserID)
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	router.POST("/segments/users", segmetsUserController.CreateSegmentsUsers)
+	router.PUT("/segments/users/:id", segmetsUserController.EditUserSegment)
+	router.GET("/segments/users:id", segmetsUserController.GetSegmentsNamesByUserID)
+	router.GET("/swagger/doc", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	return &HttpServer{
-		config:                 config,
-		router:                 router,
-		segmentController:      segmentController,
-		userSegmentsController: userSegmetsController,
+		config: config,
+		router: router,
 	}
 }
 

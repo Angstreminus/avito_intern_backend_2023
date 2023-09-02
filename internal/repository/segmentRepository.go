@@ -20,30 +20,11 @@ func NewSegmentRepository(dbHandler *sql.DB) *SegmentRepository {
 func (sr SegmentRepository) CreateSegment(segment *model.Segments) (*model.Segments, *model.ResponseError) {
 	query := `INSERT INTO segments(segment_name) VALUES $1 RETURNING id;`
 
-	rows, err := sr.dbHandler.Query(query, segment.SegmentName)
-
-	if err != nil {
-		return nil, &model.ResponseError{
-			Message: err.Error(),
-			Status:  http.StatusInternalServerError,
-		}
-	}
-
-	defer rows.Close()
-
 	var segmentId int
 
-	for rows.Next() {
-		err = rows.Scan(segmentId)
-		if err != nil {
-			return nil, &model.ResponseError{
-				Message: err.Error(),
-				Status:  http.StatusInternalServerError,
-			}
-		}
-	}
+	err := sr.dbHandler.QueryRow(query, segment.SegmentName).Scan(segmentId)
 
-	if rows.Err() != nil {
+	if err != nil {
 		return nil, &model.ResponseError{
 			Message: err.Error(),
 			Status:  http.StatusInternalServerError,
