@@ -1,8 +1,7 @@
 package service
 
 import (
-	"net/http"
-
+	apperrors "github.com/Angstreminus/avito_intern_backend_2023/internal/AppErrors"
 	"github.com/Angstreminus/avito_intern_backend_2023/internal/model"
 	"github.com/Angstreminus/avito_intern_backend_2023/internal/repository"
 )
@@ -17,7 +16,7 @@ func NewSegmentService(segRepo *repository.SegmentRepository) *SegmentService {
 	}
 }
 
-func (ss SegmentService) CreateSegment(segment *model.Segments) (*model.Segments, *model.ResponseError) {
+func (ss SegmentService) CreateSegment(segment *model.Segments) (*model.Segments, apperrors.AppError) {
 	err := validateSegment(segment)
 	if err != nil {
 		return nil, err
@@ -26,15 +25,14 @@ func (ss SegmentService) CreateSegment(segment *model.Segments) (*model.Segments
 	return ss.SegmentRepository.CreateSegment(segment)
 }
 
-func (ss SegmentService) DeleteSegment(segmentId int) *model.ResponseError {
+func (ss SegmentService) DeleteSegment(segmentId int) apperrors.AppError {
 	return ss.SegmentRepository.DeleteSegment(segmentId)
 }
 
-func validateSegment(segment *model.Segments) *model.ResponseError {
+func validateSegment(segment *model.Segments) apperrors.AppError {
 	if segment.SegmentName == "" {
-		return &model.ResponseError{
-			Message: "Empty segment name",
-			Status:  http.StatusBadRequest,
+		return &apperrors.InvalidDataErr{
+			Message: "Empty segment data",
 		}
 	}
 	return nil

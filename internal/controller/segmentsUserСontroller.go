@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	apperrors "github.com/Angstreminus/avito_intern_backend_2023/internal/AppErrors"
 	"github.com/Angstreminus/avito_intern_backend_2023/internal/model"
 	"github.com/Angstreminus/avito_intern_backend_2023/internal/service"
 	"github.com/gin-gonic/gin"
@@ -42,13 +43,17 @@ func (sc SegmentsUserController) CreateSegmentsUsers(ctx *gin.Context) {
 
 	err := ctx.BindJSON(segmentsUsers)
 	if err != nil {
-		ctx.AbortWithError(http.StatusUnprocessableEntity, err)
+		respErr := apperrors.ResponseError{
+			Message: err.Error(),
+			Status:  http.StatusUnprocessableEntity,
+		}
+		ctx.AbortWithStatusJSON(http.StatusUnprocessableEntity, respErr)
 	}
 
-	resp, respErr := sc.UserSegmentService.CreateSegmentUser(&segmentsUsers)
-	if respErr != nil {
+	resp, err := sc.UserSegmentService.CreateSegmentUser(&segmentsUsers)
+	if err != nil {
+		respErr := apperrors.MatchError(err)
 		ctx.AbortWithStatusJSON(respErr.Status, respErr)
-		return
 	}
 	ctx.JSON(http.StatusCreated, resp)
 }
@@ -68,15 +73,19 @@ func (sc SegmentsUserController) CreateSegmentsUsers(ctx *gin.Context) {
 func (sc SegmentsUserController) EditUserSegment(ctx *gin.Context) {
 	var req EditUserSegmentRequest
 
-	err := ctx.BindJSON(&req)
+	err := ctx.BindJSON(req)
 	if err != nil {
-		ctx.AbortWithError(http.StatusUnprocessableEntity, err)
+		respErr := apperrors.ResponseError{
+			Message: err.Error(),
+			Status:  http.StatusUnprocessableEntity,
+		}
+		ctx.AbortWithStatusJSON(http.StatusUnprocessableEntity, respErr)
 	}
 
-	respErr := sc.UserSegmentService.EditSegment(req.AddSegments, req.RemoveSegments, req.UserId)
-	if respErr != nil {
+	err = sc.UserSegmentService.EditSegment(req.AddSegments, req.RemoveSegments, req.UserId)
+	if err != nil {
+		respErr := apperrors.MatchError(err)
 		ctx.AbortWithStatusJSON(respErr.Status, respErr)
-		return
 	}
 	ctx.Status(http.StatusNoContent)
 }
@@ -96,11 +105,16 @@ func (sc SegmentsUserController) GetSegmentsNamesByUserID(ctx *gin.Context) {
 	stringParamId := ctx.Param("id")
 	userId, err := strconv.Atoi(stringParamId)
 	if err != nil {
-		ctx.AbortWithError(http.StatusUnprocessableEntity, err)
+		respErr := apperrors.ResponseError{
+			Message: err.Error(),
+			Status:  http.StatusUnprocessableEntity,
+		}
+		ctx.AbortWithStatusJSON(http.StatusUnprocessableEntity, respErr)
 	}
 
-	userActiveSegments, respErr := sc.UserSegmentService.GetSegmentNamesByUserId(userId)
-	if respErr != nil {
+	userActiveSegments, err := sc.UserSegmentService.GetSegmentNamesByUserId(userId)
+	if err != nil {
+		respErr := apperrors.MatchError(err)
 		ctx.AbortWithStatusJSON(respErr.Status, respErr)
 		return
 	}

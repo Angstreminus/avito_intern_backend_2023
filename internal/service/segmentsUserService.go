@@ -1,10 +1,9 @@
 package service
 
 import (
-	"errors"
-	"net/http"
 	"time"
 
+	apperrors "github.com/Angstreminus/avito_intern_backend_2023/internal/AppErrors"
 	"github.com/Angstreminus/avito_intern_backend_2023/internal/model"
 	"github.com/Angstreminus/avito_intern_backend_2023/internal/repository"
 )
@@ -19,32 +18,26 @@ func NewSegmentUserService(usrSegRepo *repository.SegmentsUserRepository) *Segme
 	}
 }
 
-func (ss SegmentsUserService) CreateSegmentUser(usrSeg *model.SegmentsUsers) (*model.SegmentsUsers, *model.ResponseError) {
+func (ss SegmentsUserService) CreateSegmentUser(usrSeg *model.SegmentsUsers) (*model.SegmentsUsers, apperrors.AppError) {
 
 	err := repository.BeginTransaction(ss.SegmentsUserRepository)
 	if err != nil {
-		return nil, &model.ResponseError{
-			Message: err.Error(),
-			Status:  http.StatusInternalServerError,
-		}
+		return nil, err
 	}
-	usrSegment, respErr := ss.SegmentsUserRepository.CreateUserSegment(usrSeg)
-	if respErr != nil {
+	usrSegment, err := ss.SegmentsUserRepository.CreateUserSegment(usrSeg)
+	if err != nil {
 		repository.RollBackTransaction(ss.SegmentsUserRepository)
-		return nil, respErr
+		return nil, err
 	}
 
 	err = repository.CommitTransaction(ss.SegmentsUserRepository)
 	if err != nil {
-		return nil, &model.ResponseError{
-			Message: err.Error(),
-			Status:  http.StatusInternalServerError,
-		}
+		return nil, err
 	}
 	return usrSegment, nil
 }
 
-func (ss SegmentsUserService) EditSegment(toAdd []string, toDel []string, userId int) *model.ResponseError {
+func (ss SegmentsUserService) EditSegment(toAdd []string, toDel []string, userId int) apperrors.AppError {
 	respErr := checkEmptyEditFields(toDel, toAdd)
 	if respErr != nil {
 		return respErr
@@ -52,24 +45,18 @@ func (ss SegmentsUserService) EditSegment(toAdd []string, toDel []string, userId
 
 	err := checkIsUniqueNames(toAdd, toDel)
 	if err != nil {
-		return &model.ResponseError{
-			Message: err.Error(),
-			Status:  http.StatusBadRequest,
-		}
+		return err
 	}
 
 	err = repository.BeginTransaction(ss.SegmentsUserRepository)
 	if err != nil {
-		return &model.ResponseError{
-			Message: err.Error(),
-			Status:  http.StatusInternalServerError,
-		}
+		return err
 	}
 
-	curentUserSegNames, respErr := ss.SegmentsUserRepository.GetSegmentNamesByUserID(userId)
-	if respErr != nil {
+	curentUserSegNames, err := ss.SegmentsUserRepository.GetSegmentNamesByUserID(userId)
+	if err != nil {
 		repository.RollBackTransaction(ss.SegmentsUserRepository)
-		return respErr
+		return err
 	}
 
 	if len(toAdd) != 0 {
@@ -90,44 +77,41 @@ func (ss SegmentsUserService) EditSegment(toAdd []string, toDel []string, userId
 	}
 	err = repository.CommitTransaction(ss.SegmentsUserRepository)
 	if err != nil {
-		return &model.ResponseError{
-			Message: err.Error(),
-			Status:  http.StatusInternalServerError,
-		}
+		return err
 	}
 
 	return nil
 }
 
-func (ss SegmentsUserService) GetSegmentNamesByUserId(userId int) ([]string, *model.ResponseError) {
+func (ss SegmentsUserService) GetSegmentNamesByUserId(userId int) ([]string, apperrors.AppError) {
 	return ss.SegmentsUserRepository.GetSegmentNamesByUserID(userId)
 }
 
-func validateUserSegment(user *model.User) *model.ResponseError {
+func validateUserSegment(user *model.User) apperrors.AppError {
 	if user.ID < 0 {
-		return &model.ResponseError{
+		return &apperrors.InvalidDataErr{
 			Message: "Invalid user id value",
-			Status:  http.StatusBadRequest,
 		}
 	}
 
 	if user.Expire_date.Before(time.Now()) {
-		return &model.ResponseError{
+		return &apperrors.InvalidDataErr{
 			Message: "Invalid time value",
-			Status:  http.StatusBadRequest,
 		}
 	}
 	return nil
 }
 
-func checkIsUniqueNames(toAdd, toDel []string) error {
+func checkIsUniqueNames(toAdd, toDel []string) apperrors.AppError {
 	uniqueMap := make(map[string]bool)
-	uniqErr := errors.New("CONFLICT OF NAMES")
+
 	for _, segment := range toAdd {
 		if !uniqueMap[segment] {
 			uniqueMap[segment] = true
 		} else {
-			return uniqErr
+			return &apperrors.InvalidDataErr{
+				Message: "TO ADD AND TO DELETE NEAMES MUST BE UNIQUE",
+			}
 		}
 	}
 
@@ -135,18 +119,19 @@ func checkIsUniqueNames(toAdd, toDel []string) error {
 		if !uniqueMap[segment] {
 			uniqueMap[segment] = true
 		} else {
-			return uniqErr
+			return &apperrors.InvalidDataErr{
+				Message: "TO ADD AND TO DELETE NEAMES MUST BE UNIQUE",
+			}
 		}
 	}
 
 	return nil
 }
 
-func checkEmptyEditFields(toAdd []string, toDel []string) *model.ResponseError {
+func checkEmptyEditFields(toAdd []string, toDel []string) apperrors.AppError {
 	if (len(toAdd) == 0) && (len(toDel) == 0) {
-		return &model.ResponseError{
+		return &apperrors.InvalidDataErr{
 			Message: "Empty processing data fields",
-			Status:  http.StatusBadRequest,
 		}
 	}
 	return nil

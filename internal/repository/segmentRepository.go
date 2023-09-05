@@ -2,8 +2,8 @@ package repository
 
 import (
 	"database/sql"
-	"net/http"
 
+	apperrors "github.com/Angstreminus/avito_intern_backend_2023/internal/AppErrors"
 	"github.com/Angstreminus/avito_intern_backend_2023/internal/model"
 )
 
@@ -17,7 +17,7 @@ func NewSegmentRepository(dbHandler *sql.DB) *SegmentRepository {
 	}
 }
 
-func (sr SegmentRepository) CreateSegment(segment *model.Segments) (*model.Segments, *model.ResponseError) {
+func (sr SegmentRepository) CreateSegment(segment *model.Segments) (*model.Segments, apperrors.AppError) {
 	query := `INSERT INTO segments(segment_name) VALUES $1 RETURNING id;`
 
 	var segmentId int
@@ -25,9 +25,8 @@ func (sr SegmentRepository) CreateSegment(segment *model.Segments) (*model.Segme
 	err := sr.dbHandler.QueryRow(query, segment.SegmentName).Scan(segmentId)
 
 	if err != nil {
-		return nil, &model.ResponseError{
+		return nil, &apperrors.DBoperationErr{
 			Message: err.Error(),
-			Status:  http.StatusInternalServerError,
 		}
 	}
 
@@ -37,30 +36,26 @@ func (sr SegmentRepository) CreateSegment(segment *model.Segments) (*model.Segme
 	}, nil
 }
 
-func (sr SegmentRepository) DeleteSegment(segmentId int) *model.ResponseError {
+func (sr SegmentRepository) DeleteSegment(segmentId int) apperrors.AppError {
 	query := `DELETE FROM segments WHERE ID = $1;`
 
 	res, err := sr.dbHandler.Exec(query, segmentId)
 
 	if err != nil {
-		return &model.ResponseError{
+		return &apperrors.DBoperationErr{
 			Message: err.Error(),
-			Status:  http.StatusInternalServerError,
 		}
 	}
 	rowsAff, err := res.RowsAffected()
-
 	if err != nil {
-		return &model.ResponseError{
+		return &apperrors.DBoperationErr{
 			Message: err.Error(),
-			Status:  http.StatusInternalServerError,
 		}
 	}
 
 	if rowsAff == 0 {
-		return &model.ResponseError{
-			Message: "Segment not found",
-			Status:  http.StatusNotFound,
+		return &apperrors.DBoperationErr{
+			Message: sql.ErrNoRows.Error(),
 		}
 	}
 

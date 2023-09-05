@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	apperrors "github.com/Angstreminus/avito_intern_backend_2023/internal/AppErrors"
 	"github.com/Angstreminus/avito_intern_backend_2023/internal/model"
 	"github.com/Angstreminus/avito_intern_backend_2023/internal/service"
 	"github.com/gin-gonic/gin"
@@ -37,11 +38,16 @@ func (sc SegmentController) CreateSegment(ctx *gin.Context) {
 	err := ctx.BindJSON(segment)
 
 	if err != nil {
-		ctx.AbortWithStatusJSON(http.StatusUnprocessableEntity, err)
+		respErr := apperrors.ResponseError{
+			Message: err.Error(),
+			Status:  http.StatusUnprocessableEntity,
+		}
+		ctx.AbortWithStatusJSON(http.StatusUnprocessableEntity, respErr)
 	}
 
-	resp, respErr := sc.segmentService.CreateSegment(&segment)
-	if respErr != nil {
+	resp, err := sc.segmentService.CreateSegment(&segment)
+	if err != nil {
+		respErr := apperrors.MatchError(err)
 		ctx.AbortWithStatusJSON(respErr.Status, respErr)
 		return
 	}
@@ -66,12 +72,17 @@ func (sc SegmentController) DeleteSegment(ctx *gin.Context) {
 	segmentId, err := strconv.Atoi(queryId)
 
 	if err != nil {
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		respErr := apperrors.ResponseError{
+			Message: err.Error(),
+			Status:  http.StatusUnprocessableEntity,
+		}
+		ctx.AbortWithStatusJSON(http.StatusUnprocessableEntity, respErr)
 	}
 
-	respErr := sc.segmentService.DeleteSegment(segmentId)
+	err = sc.segmentService.DeleteSegment(segmentId)
 
-	if respErr != nil {
+	if err != nil {
+		respErr := apperrors.MatchError(err)
 		ctx.AbortWithStatusJSON(respErr.Status, respErr)
 	}
 

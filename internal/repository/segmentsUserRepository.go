@@ -2,8 +2,8 @@ package repository
 
 import (
 	"database/sql"
-	"net/http"
 
+	apperrors "github.com/Angstreminus/avito_intern_backend_2023/internal/AppErrors"
 	"github.com/Angstreminus/avito_intern_backend_2023/internal/model"
 	"github.com/lib/pq"
 )
@@ -19,7 +19,7 @@ func NewSegmentUserRepository(dbHandler *sql.DB) *SegmentsUserRepository {
 	}
 }
 
-func (sur SegmentsUserRepository) CreateUserSegment(segmentsUsers *model.SegmentsUsers) (*model.SegmentsUsers, *model.ResponseError) {
+func (sur SegmentsUserRepository) CreateUserSegment(segmentsUsers *model.SegmentsUsers) (*model.SegmentsUsers, apperrors.AppError) {
 	query := `
         INSERT INTO SEGMENTS_USERS(USER_ID, SEGMENT_ID)
         VALUES ($1, $2) RETURNING USER_ID, SEGMENT_ID;
@@ -31,9 +31,8 @@ func (sur SegmentsUserRepository) CreateUserSegment(segmentsUsers *model.Segment
 
 	err := sur.dbHandler.QueryRow(query, segmentsUsers.UserID, segmentsUsers.SegmentID).Scan(&userId, &segmentUserId)
 	if err != nil {
-		return nil, &model.ResponseError{
+		return nil, &apperrors.DBoperationErr{
 			Message: err.Error(),
-			Status:  http.StatusInternalServerError,
 		}
 	}
 
@@ -43,7 +42,7 @@ func (sur SegmentsUserRepository) CreateUserSegment(segmentsUsers *model.Segment
 	}, nil
 }
 
-func (sur SegmentsUserRepository) GetSegmentNamesByUserID(userId int) ([]string, *model.ResponseError) {
+func (sur SegmentsUserRepository) GetSegmentNamesByUserID(userId int) ([]string, apperrors.AppError) {
 	query := `SELECT S.SEGMENT_NAME FROM 
 	SEGMENTS S 
 	JOIN SEGMENTS_USERS SU ON SU.SEGMENT_ID = S.ID WHERE SU.USER_ID = $1;`
@@ -51,16 +50,15 @@ func (sur SegmentsUserRepository) GetSegmentNamesByUserID(userId int) ([]string,
 	var segmentNames []string
 
 	if err := sur.dbHandler.QueryRow(query, userId).Scan(pq.Array(&segmentNames)); err != nil {
-		return nil, &model.ResponseError{
+		return nil, &apperrors.DBoperationErr{
 			Message: err.Error(),
-			Status:  http.StatusInternalServerError,
 		}
 	}
 
 	return segmentNames, nil
 }
 
-func (sur SegmentsUserRepository) AddSegmentsToUser(toAdd []string, userId int) *model.ResponseError {
+func (sur SegmentsUserRepository) AddSegmentsToUser(toAdd []string, userId int) apperrors.AppError {
 
 	query := `INSERT INTO SEGMENTS_USERS(SEGMENT_ID, USER_ID) VALUES($1,$2);`
 
@@ -68,24 +66,21 @@ func (sur SegmentsUserRepository) AddSegmentsToUser(toAdd []string, userId int) 
 		res, err := sur.dbHandler.Exec(query, toAdd[i], userId)
 
 		if err != nil {
-			return &model.ResponseError{
+			return &apperrors.DBoperationErr{
 				Message: err.Error(),
-				Status:  http.StatusInternalServerError,
 			}
 		}
 
 		rowsAff, err := res.RowsAffected()
 		if err != nil {
-			return &model.ResponseError{
+			return &apperrors.DBoperationErr{
 				Message: err.Error(),
-				Status:  http.StatusInternalServerError,
 			}
 		}
 
 		if rowsAff == 0 {
-			return &model.ResponseError{
-				Message: "User not found",
-				Status:  http.StatusNotFound,
+			return &apperrors.DBoperationErr{
+				Message: sql.ErrNoRows.Error(),
 			}
 		}
 	}
@@ -93,7 +88,7 @@ func (sur SegmentsUserRepository) AddSegmentsToUser(toAdd []string, userId int) 
 	return nil
 }
 
-func (sur SegmentsUserRepository) RemoveSegmentsUsers(toDel []string, userId int) *model.ResponseError {
+func (sur SegmentsUserRepository) RemoveSegmentsUsers(toDel []string, userId int) apperrors.AppError {
 
 	query := `DELETE FROM SEGMENTS_USERS WHERE USER_ID = $2 AND SEGMENT_ID = (
 		SELECT ID FROM SEGMENTS
@@ -104,24 +99,21 @@ func (sur SegmentsUserRepository) RemoveSegmentsUsers(toDel []string, userId int
 		res, err := sur.dbHandler.Exec(query, toDel[i], userId)
 
 		if err != nil {
-			return &model.ResponseError{
+			return &apperrors.DBoperationErr{
 				Message: err.Error(),
-				Status:  http.StatusInternalServerError,
 			}
 		}
 
 		rowsAff, err := res.RowsAffected()
 		if err != nil {
-			return &model.ResponseError{
+			return &apperrors.DBoperationErr{
 				Message: err.Error(),
-				Status:  http.StatusInternalServerError,
 			}
 		}
 
 		if rowsAff == 0 {
-			return &model.ResponseError{
-				Message: "User not found",
-				Status:  http.StatusNotFound,
+			return &apperrors.DBoperationErr{
+				Message: sql.ErrNoRows.Error(),
 			}
 		}
 	}
